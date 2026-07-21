@@ -11,3 +11,133 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+/*
+Customers
+*/
+model Customer {
+  id              String   @id @default(cuid())
+  name            String
+  surname         String
+  email           String   @unique
+  phone           String   @unique
+  pIva            String?  @unique
+  cFiscale        String   @unique
+  comuneResidenza String
+  cap             String
+  via             String?
+  numeroCivico    String?
+  tipoClienteId   String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tipoCliente     TipologiaCliente @relation(fields: [tipoClienteId], references: [id])
+  preventivi      Preventivo[]
+}
+
+// Privato o Rivenditore
+model TipologiaCliente {
+  id          String   @id @default(cuid())
+  tipoCliente String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  clienti     Customer[]
+}
+
+/**
+  Preventivi
+*/
+model Preventivo {
+  id            String   @id @default(cuid())
+  customerId    String
+  dataScadenza  DateTime
+  totale        Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  customer      Customer @relation(fields: [customerId], references: [id])
+  sezioni       SezionePreventivo[]
+}
+
+model SezionePreventivo {
+  id            String @id @default(cuid())
+  nome          String
+  preventivoId  String
+
+  preventivo    Preventivo @relation(fields: [preventivoId], references: [id])
+  prodotti      ProdottoSezione[]
+}
+
+model ProdottoSezione {
+  sezioneId   String
+  prodottoId  String
+  quantità    Int
+
+  sezione     SezionePreventivo @relation(fields: [sezioneId], references: [id])
+  prodotto    Prodotto @relation(fields: [prodottoId], references: [id])
+
+  @@id([sezioneId, prodottoId])
+}
+
+model Prodotto {
+  id                  String @id @default(cuid())
+  codiceProdotto      String
+  codiceColore        String
+  descrizione         String
+  tipoProdottoId      String
+  produttoreId        String
+  dimensione          String
+  unitàPerScatola     Int
+  prezzo              Float
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  tipoProdotto        TipologiaProdotto @relation(fields: [tipoProdottoId], references: [id])
+  produttore          Produttore @relation(fields: [produttoreId], references: [id])
+  sezioniPreventivo   ProdottoSezione[]
+  ordini              ProdottoOrdine[]
+}
+
+model Produttore {
+  id          String @id @default(cuid())
+  nome        String
+  email       String
+  telefono    String
+  sitoweb     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  prodotti    Prodotto[]
+}
+
+model TipologiaProdotto {
+  id           String @id @default(cuid())
+  tipoProdotto String @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  prodotti     Prodotto[]
+}
+
+model OrdiniMagazzino {
+  id        String @id @default(cuid())
+  clienteId String?
+  nome      String
+  tipologia String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prodottiOrdine ProdottoOrdine[]
+}
+
+model ProdottoOrdine {
+  movimentoId String
+  prodottoId  String
+  quantità    String
+
+  movimento   OrdiniMagazzino @relation(fields: [movimentoId], references: [id])
+  prodotto    Prodotto @relation(fields: [prodottoId], references: [id])
+
+  @@id([movimentoId, prodottoId])
+}
