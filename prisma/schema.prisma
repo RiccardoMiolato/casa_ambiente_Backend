@@ -53,6 +53,7 @@ model Preventivo {
   customerId    String
   dataScadenza  DateTime
   totale        Float
+  nota          String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
