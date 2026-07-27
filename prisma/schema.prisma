@@ -52,7 +52,6 @@ model Preventivo {
   id            String   @id @default(cuid())
   customerId    String
   dataScadenza  DateTime
-  totale        Float
   nota          String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -74,6 +73,7 @@ model ProdottoSezione {
   sezioneId   String
   prodottoId  String
   quantità    Int
+  prezzo      Decimal @db.Decimal(10, 2)
 
   sezione     SezionePreventivo @relation(fields: [sezioneId], references: [id])
   prodotto    Prodotto @relation(fields: [prodottoId], references: [id])
@@ -90,7 +90,7 @@ model Prodotto {
   produttoreId        String
   dimensione          String
   unitàPerScatola     Int
-  prezzo              Float
+  prezzo              Decimal @db.Decimal(10, 2)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
