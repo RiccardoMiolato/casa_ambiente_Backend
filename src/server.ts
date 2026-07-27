@@ -7,6 +7,7 @@ import { prisma } from "./lib/prisma";
 import customerRoutes from "./routes/customer";
 import customerTypeRoutes from "./routes/customerType";
 import estimateRoutes from "./routes/estimates";
+import producerRoutes from "./routes/producer";
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use(cors());
 app.use("/api/customers", customerRoutes);
 app.use("/api/customer/types", customerTypeRoutes);
 app.use("/api/estimates", estimateRoutes);
+app.use("/api/producers", producerRoutes);
 
 // Health check
 // Used to verify server status through HTTP requests
