@@ -8,6 +8,7 @@ import customerRoutes from "./routes/customer";
 import customerTypeRoutes from "./routes/customerType";
 import estimateRoutes from "./routes/estimates";
 import producerRoutes from "./routes/producer";
+import productRoutes from "./routes/products";
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/customer/types", customerTypeRoutes);
 app.use("/api/estimates", estimateRoutes);
 app.use("/api/producers", producerRoutes);
+app.use("/api/products", productRoutes);
 
 // Health check
 // Used to verify server status through HTTP requests
