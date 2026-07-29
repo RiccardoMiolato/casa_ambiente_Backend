@@ -1,5 +1,6 @@
 import express from "express";
 import { createProducer, deleteProducer, getAllProducers, getProducerById, updateProducer } from "../controllers/producerController";
+import { getProductsByProducerId } from "../controllers/productController";
 
 const router = express.Router();
 
@@ -8,6 +9,9 @@ router.get("/", getAllProducers);
 
 // GET /producers/:id
 router.get("/:id", getProducerById);
+
+// GET /producers/:id/products
+router.get("/:id/products", getProductsByProducerId);
 
 // POST /producers
 router.post("/", createProducer);

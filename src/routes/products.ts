@@ -1,5 +1,5 @@
 import express from "express";
-import { createProduct, createProductType, deleteProduct, deleteProductType, getAllProducts, getAllProductTypes, getProductById, getProductTypeById, updateProduct, updateProductType } from "../controllers/productController";
+import { createProduct, deleteProduct, getAllProducts, getProductById, updateProduct } from "../controllers/productController";
 
 const router = express.Router();
 
@@ -10,31 +10,12 @@ router.get("/", getAllProducts);
 router.get("/:id", getProductById);
 
 // POST /products
-router.get("/", createProduct);
+router.post("/", createProduct);
 
 // PUT /products/:id
-router.get("/:id", updateProduct);
+router.put("/:id", updateProduct);
 
 // DELETE /products/:id
-router.get("/:id", deleteProduct);
-
-/**
- * PRODUCT TYPES
- */
-
-// GET /products/types
-router.get("/types/", getAllProductTypes);
-
-// GET /products/types/:id
-router.get("/types/:id", getProductTypeById);
-
-// POST /products/types
-router.get("/types/", createProductType);
-
-// PUT /products/types/:id
-router.get("/types/:id", updateProductType);
-
-// DELETE /products/types/:id
-router.get("/types/:id", deleteProductType);
+router.delete("/:id", deleteProduct);
 
 export default router;

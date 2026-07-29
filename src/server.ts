@@ -9,6 +9,7 @@ import customerTypeRoutes from "./routes/customerType";
 import estimateRoutes from "./routes/estimates";
 import producerRoutes from "./routes/producer";
 import productRoutes from "./routes/products";
+import productTypeRoutes from "./routes/productTypes";
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use("/api/customer/types", customerTypeRoutes);
 app.use("/api/estimates", estimateRoutes);
 app.use("/api/producers", producerRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/product-types", productTypeRoutes);
 
 // Health check
 // Used to verify server status through HTTP requests
@@ -35,7 +37,7 @@ app.get("/health", (req: Request, res: Response) => {
 
 // ============= ERROR HANDLING =============
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error("❌ Error:", err.message);
+  console.error("Error:", err.message);
   res.status(err.status || 500).json({
     error: err.message || "Internal server error",
   });
@@ -48,7 +50,7 @@ app.use((req: Request, res: Response) => {
 
 // ============= SERVER STARTUP =============
 const server = app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
 
 // ============= GRACEFUL SHUTDOWN =============

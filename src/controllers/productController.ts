@@ -28,6 +28,19 @@ export const getProductById = async (req: Request, res: Response) => {
     }
 }
 
+export const getProductsByProducerId = async (req: Request, res: Response) => {
+    const { id } = req.params; // Producer ID
+
+    try {
+        const products = await prisma.prodotto.findMany({
+            where: { produttoreId: id },
+        });
+        res.status(200).json(products);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch products for the producer" });
+    }
+}
+
 export const createProduct = async (req: Request, res: Response) => {
     const {
         codiceProdotto,
@@ -173,7 +186,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
  */
 export const getAllProductTypes = async (req: Request, res: Response) => {
     try {
-        const productTypes = prisma.tipologiaProdotto.findMany();
+        const productTypes = await prisma.tipologiaProdotto.findMany();
         res.status(200).json(productTypes);
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch product types" });
