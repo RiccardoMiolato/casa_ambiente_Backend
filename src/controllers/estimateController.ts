@@ -75,14 +75,21 @@ export const createEstimate = async (req: Request, res: Response) => {
             return res.status(404).json({ error: "Customer not found" });
         }
 
-        const totale: number = 0;
+        // Ensure dataScadenza is a valid date and remove time component
+        const parsedDate = new Date(dataScadenza);
+        if (isNaN(parsedDate.getTime())) {
+            return res.status(400).json({ error: "Invalid date format for dataScadenza" });
+        }
+        // Set time to midnight (00:00:00) to keep only the date
+        parsedDate.setUTCHours(0, 0, 0, 0);
+
         const newEstimate = await prisma.preventivo.create({
             data: {
-            dataScadenza,
-            nota,
-            customer: {
-                connect: { id: customerId },
-            },
+                dataScadenza: parsedDate,
+                nota,
+                customer: {
+                    connect: { id: customerId },
+                },
             },
         });
 
@@ -177,6 +184,7 @@ export const addSectionToEstimate = async (req: Request, res: Response) => {
     }
 
     try {
+        console.log("ID: ", estimateId);
         const estimate = await prisma.preventivo.findUnique({
             where: { id: estimateId },
         });
@@ -249,6 +257,152 @@ export const deleteSectionFromEstimate = async (req: Request, res: Response) => 
         res.status(204).send();
     } catch (error) {
         console.error("Error deleting section from estimate:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+/**
+ * SECTION-PRODUCTS CONTROLLER PART
+ */
+export const getProductsBySectionId = async (req: Request, res: Response) => {
+    const { estimateId, sectionId } = req.params;
+
+    try {
+        const estimate = await prisma.preventivo.findUnique({
+            where: { id: estimateId }
+        });
+
+        if(!estimate) {
+            return res.status(404).json({ error: "Estimate not found"});
+        }
+
+        const estimateSection = await prisma.sezionePreventivo.findUnique ({
+            where: { id: sectionId },
+            include: {
+                prodotti: {
+                    include: {
+                        prodotto: true
+                    }
+                }
+            }
+        });
+
+        if (!estimateSection) {
+            return res.status(404).json({ error: "Section not found"});
+        }
+
+        if(estimateSection.preventivoId !== estimateId) {
+            res.status(409).json({ error: "Section does not belong to the specified estimate"});
+        }
+
+
+
+        res.status(200).json(estimateSection);
+    } catch (error) {
+        console.error("Error fetching products by section ID:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+export const addProductToSection = async (req: Request, res: Response) => {
+    const { sectionId } = req.params;
+    const { productId, quantity } = req.body;
+
+    if (!productId) {
+        return res.status(400).json({ error: "Missing required field: productId" });
+    }
+
+    try {
+        const section = await prisma.sezionePreventivo.findUnique({
+            where: { id: sectionId },
+        });
+
+        if (!section) {
+            return res.status(404).json({ error: "Section not found" });
+        }
+
+        const product = await prisma.prodotto.findUnique({
+            where: { id: productId },
+        });
+
+        if (!product) {
+            return res.status(404).json({ error: "Product not found" });
+        }
+
+        const newSectionProduct = await prisma.prodottoSezione.create({
+            data: {
+                quantità: quantity,
+                prezzo: product.prezzo,
+                sezione: {
+                    connect: { id: sectionId },
+                },
+                prodotto: {
+                    connect: { id: productId },
+                },
+            },
+        });
+
+        res.status(201).json(newSectionProduct);
+    } catch (error) {
+        console.error("Error adding product to section:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+export const updateProductQuantityInSection = async (req: Request, res: Response) => {
+    const { sectionId, productId } = req.params;
+    const { quantity } = req.body;
+
+    if (quantity === undefined) {
+        return res.status(400).json({ error: "Missing required field: quantity" });
+    }
+
+    try {
+        const sectionProduct = await prisma.prodottoSezione.findFirst({
+            where: {
+                sezioneId: sectionId,
+                prodottoId: productId,
+            },
+        });
+
+        if (!sectionProduct) {
+            return res.status(404).json({ error: "Product not found in this section" });
+        }
+
+        const updatedSectionProduct = await prisma.prodottoSezione.update({
+            where: { id: sectionProduct.id },
+            data: { quantità: quantity },
+        });
+
+        res.json(updatedSectionProduct);
+    } catch (error) {
+        console.error("Error updating product quantity in section:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+export const removeProductFromSection = async (req: Request, res: Response) => {
+    const { sectionId, productId } = req.params;
+
+    try {
+        const sectionProduct = await prisma.prodottoSezione.findFirst({
+            where: {
+                sezioneId: sectionId,
+                prodottoId: productId,
+            },
+        });
+
+        if (!sectionProduct) {
+            return res.status(404).json({ error: "Product not found in this section" });
+        }
+
+        await prisma.prodottoSezione.delete({
+            where: { id: sectionProduct.id },
+        });
+
+        res.status(204).send();
+    } catch (error) {
+        console.error("Error removing product from section:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 }
