@@ -7,6 +7,7 @@ import { prisma } from "./lib/prisma";
 import customerRoutes from "./routes/customer";
 import customerTypeRoutes from "./routes/customerType";
 import estimateRoutes from "./routes/estimates";
+import orderRoutes from "./routes/orders";
 import producerRoutes from "./routes/producer";
 import productRoutes from "./routes/products";
 import productTypeRoutes from "./routes/productTypes";
@@ -28,6 +29,7 @@ app.use("/api/estimates", estimateRoutes);
 app.use("/api/producers", producerRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/product-types", productTypeRoutes);
+app.use("/api/orders", orderRoutes);
 
 // Health check
 // Used to verify server status through HTTP requests
