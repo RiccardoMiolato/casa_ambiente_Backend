@@ -32,6 +32,7 @@ model Customer {
   updatedAt       DateTime @updatedAt
 
   tipoCliente     TipologiaCliente @relation(fields: [tipoClienteId], references: [id])
+  ordini          OrdiniMagazzino[]
   preventivi      Preventivo[]
 }
 
@@ -122,14 +123,15 @@ model TipologiaProdotto {
 }
 
 model OrdiniMagazzino {
-  id        String @id @default(cuid())
-  clienteId String?
-  nome      String
-  tipologia String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String @id @default(cuid())
+  clienteId       String?
+  nome            String
+  tipologia       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  prodottiOrdine ProdottoOrdine[]
+  cliente         Customer? @relation(fields: [clienteId], references: [id])
+  prodottiOrdine  ProdottoOrdine[]
 }
 
 model ProdottoOrdine {
