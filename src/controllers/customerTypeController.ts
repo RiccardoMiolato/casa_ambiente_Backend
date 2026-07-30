@@ -6,7 +6,6 @@ export const getAllCustomerTypes = async (req: Request, res: Response) => {
         const customerTypes = await prisma.tipologiaCliente.findMany();
         res.json(customerTypes);
     } catch (error) {
-        console.error("Error fetching customer types:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 }
@@ -22,13 +21,16 @@ export const createCustomerType = async (req: Request, res: Response) => {
         });
         res.status(201).json(newCustomerType);
     } catch (error) {
-        console.error("Error creating customer type:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 }
 
 export const deleteCustomerType = async (req: Request, res: Response) => {
     const { id } = req.params;
+
+    if (!id)
+        return res.status(400).json({error: "Missing parameter in the request: id"});
+
     try {
         const deletedCustomerType = await prisma.tipologiaCliente.delete({
             where: { id: id },
@@ -40,7 +42,6 @@ export const deleteCustomerType = async (req: Request, res: Response) => {
 
         res.json(deletedCustomerType);
     } catch (error) {
-        console.error("Error deleting customer type:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 }
