@@ -1,0 +1,8 @@
+[test]
+root = "."
+timeout = 5000
+preload = ["./test/setup.ts"]
+
+[coverage]
+enabled = true
+ignore = ["node_modules/", "dist/", "prisma/", "generated"]

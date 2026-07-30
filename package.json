@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "bunx tsx src/server.ts",
     "build": "bun build src/server.ts",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage"
   },
   "devDependencies": {
     "@types/bun": "latest",
