@@ -1,99 +1,12 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { Response } from "express";
-
-const mockPrismaCustomer = {
-  findMany: mock(async () => [
-    {
-      id: "1",
-      name: "John",
-      surname: "Doe",
-      email: "john@example.com",
-      phone: "1234567890",
-      pIva: null,
-      cFiscale: "ABC123",
-      comuneResidenza: "Roma",
-      cap: "00100",
-      via: "Via Roma",
-      numeroCivico: "1",
-      tipoClienteId: "type-1",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ]),
-
-  findUnique: mock(async ({ where }: any) => {
-    if (where.id === "1") {
-      return {
-        id: "1",
-        name: "John",
-        surname: "Doe",
-        email: "john@example.com",
-        phone: "1234567890",
-        pIva: null,
-        cFiscale: "ABC123",
-        comuneResidenza: "Roma",
-        cap: "00100",
-        via: "Via Roma",
-        numeroCivico: "1",
-        tipoClienteId: "type-1",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-    }
-    return null;
-  }),
-
-  create: mock(async ({ data }: any) => ({
-    id: "new-id",
-    ...data,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  })),
-
-  update: mock(async ({ where, data }: any) => {
-    if (where.id === "1") {
-      return {
-        id: where.id,
-        ...data,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-    }
-
-    return null;
-  }),
-
-  delete: mock(async ({ where }: any) => {
-    if (where.id === "1") {
-      return {
-        id: where.id,
-        name: "John",
-      }
-    }
-
-    return null;
-  }),
-};
+import mockPrismaCustomer from "../utils/mocks/MockPrismaCustomer";
+import MockResponse from "../utils/mocks/MockResponse";
 
 const mockPrisma = {
   customer: mockPrismaCustomer,
   $disconnect: mock(async () => {}),
 } as any;
-
-class MockResponse {
-  statusCode = 200;
-  responseData: any = null;
-
-  status(code: number) {
-    this.statusCode = code;
-    return this;
-  }
-
-  json(data: any) {
-    this.responseData = data;
-    return this;
-  }
-}
 
 mock.module("../../src/lib/prisma", () => ({
   prisma: mockPrisma
