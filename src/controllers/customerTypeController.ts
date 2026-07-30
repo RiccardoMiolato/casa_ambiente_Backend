@@ -1,8 +1,7 @@
 import type { Request, Response } from "express";
-import type { PrismaClient } from "../../generated/prisma/client";
-import { prisma as default_prisma } from "../lib/prisma";
+import { prisma } from "../lib/prisma";
 
-export const getAllCustomerTypes = async (req: Request, res: Response, prisma: PrismaClient = default_prisma) => {
+export const getAllCustomerTypes = async (req: Request, res: Response) => {
     try {
         const customerTypes = await prisma.tipologiaCliente.findMany();
         res.json(customerTypes);
@@ -12,7 +11,7 @@ export const getAllCustomerTypes = async (req: Request, res: Response, prisma: P
     }
 }
 
-export const createCustomerType = async (req: Request, res: Response, prisma: PrismaClient = default_prisma) => {
+export const createCustomerType = async (req: Request, res: Response) => {
     const { tipoCliente } = req.body;
     if (!tipoCliente) {
         return res.status(400).json({ error: "Missing required field: tipoCliente" });
@@ -28,7 +27,7 @@ export const createCustomerType = async (req: Request, res: Response, prisma: Pr
     }
 }
 
-export const deleteCustomerType = async (req: Request, res: Response, prisma: PrismaClient = default_prisma) => {
+export const deleteCustomerType = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
         const deletedCustomerType = await prisma.tipologiaCliente.delete({

@@ -1,18 +1,16 @@
 import type { Request, Response } from "express";
-import type { PrismaClient } from "../../generated/prisma/client";
-import { prisma as default_prisma } from "../lib/prisma";
+import { prisma } from "../lib/prisma";
 
-export const getAllCustomers = async (req: Request, res: Response, prisma: PrismaClient = default_prisma) => {
+export const getAllCustomers = async (req: Request, res: Response) => {
     try {
         const customers = await prisma.customer.findMany();
         res.json(customers);
     } catch (error) {
-        console.error("Error fetching customers:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 }
 
-export const getCustomerById = async (req: Request, res: Response, prisma: PrismaClient = default_prisma) => {
+export const getCustomerById = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     if (!id) {
@@ -29,12 +27,11 @@ export const getCustomerById = async (req: Request, res: Response, prisma: Prism
         }
         res.json(customer);
     } catch (error) {
-        console.error(`Error fetching customer with ID ${id}:`, error);
         res.status(500).json({ error: "Internal server error" });
     }
 }
 
-export const createCustomer = async (req: Request, res: Response, prisma: PrismaClient = default_prisma) => {
+export const createCustomer = async (req: Request, res: Response) => {
     const {
         name,
         surname,
@@ -71,12 +68,11 @@ export const createCustomer = async (req: Request, res: Response, prisma: Prisma
         });
         res.status(201).json(newCustomer);
     }catch (error: any) {
-        console.error("Error creating customer:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 }
 
-export const updateCustomer = async (req: Request, res: Response, prisma: PrismaClient = default_prisma) => {
+export const updateCustomer = async (req: Request, res: Response) => {
     const { id } = req.params;
     const {
         name,
@@ -91,6 +87,12 @@ export const updateCustomer = async (req: Request, res: Response, prisma: Prisma
         numeroCivico,
         tipoClienteId
     } = req.body;
+
+    if (!id) {
+        return res.status(400).json({
+            error: "Id not passed, impossible to find customer"
+        })
+    }
     try {
         const updatedCustomer = await prisma.customer.update({
             where: { id: id },
@@ -113,13 +115,19 @@ export const updateCustomer = async (req: Request, res: Response, prisma: Prisma
         }
         res.json(updatedCustomer);
     } catch (error) {
-        console.error(`Error updating customer with ID ${id}:`, error);
         res.status(500).json({ error: "Internal server error" });
     }
 }
 
-export const deleteCustomer = async (req: Request, res: Response, prisma: PrismaClient = default_prisma) => {
+export const deleteCustomer = async (req: Request, res: Response) => {
     const { id } = req.params;
+
+    if (!id) {
+        return res.status(400).json({
+            error: "Id not passed, impossible to find customer"
+        })
+    }
+
     try {
         const deletedCustomer = await prisma.customer.delete({
             where: { id: id },
@@ -129,7 +137,6 @@ export const deleteCustomer = async (req: Request, res: Response, prisma: Prisma
         }
         res.json({ message: "Customer deleted successfully" });
     } catch (error) {
-        console.error(`Error deleting customer with ID ${id}:`, error);
         res.status(500).json({ error: "Internal server error" });
     }
 }

@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { Response } from "express";
-import { createCustomer, deleteCustomer, getAllCustomers, getCustomerById, updateCustomer } from "../../src/controllers/customerController";
 
 const mockPrismaCustomer = {
   findMany: mock(async () => [
@@ -78,6 +77,7 @@ const mockPrismaCustomer = {
 
 const mockPrisma = {
   customer: mockPrismaCustomer,
+  $disconnect: mock(async () => {}),
 } as any;
 
 class MockResponse {
@@ -94,6 +94,18 @@ class MockResponse {
     return this;
   }
 }
+
+mock.module("../../src/lib/prisma", () => ({
+  prisma: mockPrisma
+}));
+
+import {
+  createCustomer,
+  deleteCustomer,
+  getAllCustomers,
+  getCustomerById,
+  updateCustomer
+} from "../../src/controllers/customerController";
 
 describe("Customer Controller", () => {
   let mockRes: MockResponse;
@@ -114,8 +126,7 @@ describe("Customer Controller", () => {
 
       await getAllCustomers(
         mockReq as any,
-        mockRes as any as Response,
-        mockPrisma
+        mockRes as any as Response
       );
 
       expect(mockRes.statusCode).toBe(200);
@@ -128,11 +139,26 @@ describe("Customer Controller", () => {
 
       await getAllCustomers(
         mockReq as any,
-        mockRes as any as Response,
-        mockPrisma
+        mockRes as any as Response
       );
 
       expect(mockPrismaCustomer.findMany).toHaveBeenCalledTimes(1);
+    });
+
+    it("Should fail with code 500 due to database error", async () => {
+      const mockReq = { params: {}, body: {} } as any;
+
+      mockPrismaCustomer.findMany.mockRejectedValueOnce(
+        new Error("Error in the database, impossible to continue")
+      );
+
+      await getAllCustomers(
+        mockReq as any,
+        mockRes as any as Response
+      );
+
+      expect(mockRes.statusCode).toBe(500);
+      expect(mockRes.responseData).toHaveProperty("error");
     });
   });
 
@@ -142,8 +168,7 @@ describe("Customer Controller", () => {
 
       await getCustomerById(
         mockReq as any,
-        mockRes as any as Response,
-        mockPrisma
+        mockRes as any as Response
       );
 
       expect(mockRes.statusCode).toBe(200);
@@ -156,8 +181,7 @@ describe("Customer Controller", () => {
 
       await getCustomerById(
         mockReq as any,
-        mockRes as any as Response,
-        mockPrisma
+        mockRes as any as Response
       );
 
       expect(mockRes.statusCode).toBe(404);
@@ -169,11 +193,26 @@ describe("Customer Controller", () => {
 
       await getCustomerById(
         mockReq as any,
-        mockRes as any as Response,
-        mockPrisma
+        mockRes as any as Response
       );
 
       expect(mockRes.statusCode).toBe(400);
+      expect(mockRes.responseData).toHaveProperty("error");
+    });
+
+    it("Should fail with code 500 due to database error", async () => {
+      const mockReq = { params: {id: "1"}, body: {} } as any;
+
+      mockPrismaCustomer.findUnique.mockRejectedValueOnce(
+        new Error("Error in the database, impossible to continue")
+      );
+
+      await getCustomerById(
+        mockReq as any,
+        mockRes as any as Response
+      );
+
+      expect(mockRes.statusCode).toBe(500);
       expect(mockRes.responseData).toHaveProperty("error");
     });
   });
@@ -199,8 +238,7 @@ describe("Customer Controller", () => {
 
       await createCustomer(
         mockReq as any,
-        mockRes as any as Response,
-        mockPrisma
+        mockRes as any as Response
       );
 
       expect(mockRes.statusCode).toBe(201);
@@ -228,8 +266,7 @@ describe("Customer Controller", () => {
 
       await createCustomer(
         mockReq as any,
-        mockRes as any as Response,
-        mockPrisma
+        mockRes as any as Response
       );
 
       expect(mockRes.statusCode).toBe(201);
@@ -254,8 +291,7 @@ describe("Customer Controller", () => {
 
       await createCustomer(
         mockReq as any,
-        mockRes as any as Response,
-        mockPrisma
+        mockRes as any as Response
       );
 
       expect(mockRes.statusCode).toBe(201);
@@ -277,7 +313,7 @@ describe("Customer Controller", () => {
 
         const mockReq = { params: {}, body };
 
-        await createCustomer(mockReq as any, mockRes as any, mockPrisma);
+        await createCustomer(mockReq as any, mockRes as any);
 
         expect(mockRes.statusCode).toBe(400);
         expect(mockRes.responseData).toHaveProperty("error");
@@ -290,12 +326,28 @@ describe("Customer Controller", () => {
 
         const mockReq = { params: {}, body };
 
-        await createCustomer(mockReq as any, mockRes as any, mockPrisma);
+        await createCustomer(mockReq as any, mockRes as any);
 
         expect(mockRes.statusCode).toBe(400);
         expect(mockRes.responseData).toHaveProperty("error");
       }
     );
+
+    it("Should fail with code 500 due to database error", async () => {
+      const mockReq = { params: {}, body: {...customer_data} } as any;
+
+      mockPrismaCustomer.create.mockRejectedValueOnce(
+        new Error("Error in the database, impossible to continue")
+      );
+
+      await createCustomer(
+        mockReq as any,
+        mockRes as any as Response
+      );
+
+      expect(mockRes.statusCode).toBe(500);
+      expect(mockRes.responseData).toHaveProperty("error");
+    });
   });
 
   describe("updateCustomer", () => {
@@ -321,8 +373,7 @@ describe("Customer Controller", () => {
 
       await updateCustomer(
         mockReq as any,
-        mockRes as any as Response,
-        mockPrisma
+        mockRes as any as Response
       )
 
       expect(mockRes.statusCode).toBe(200);
@@ -347,11 +398,42 @@ describe("Customer Controller", () => {
 
       await updateCustomer(
         mockReq as any,
-        mockRes as any as Response,
-        mockPrisma
+        mockRes as any as Response
       );
 
       expect(mockRes.statusCode).toBe(404);
+      expect(mockRes.responseData).toHaveProperty("error");
+    });
+
+    it("Should return 400 due to missing parameter", async () => {
+      const updatedFields = {
+        ...customer_data
+      };
+
+      const mockReq = { params: { }, body: updatedFields } as any;
+
+      await updateCustomer(
+        mockReq as any,
+        mockRes as any as Response
+      );
+
+      expect(mockRes.statusCode).toBe(400);
+      expect(mockRes.responseData).toHaveProperty("error");
+    });
+
+    it("Should fail with code 500 due to database error", async () => {
+      const mockReq = { params: {id: "1"}, body: {...customer_data} } as any;
+
+      mockPrismaCustomer.update.mockRejectedValueOnce(
+        new Error("Error in the database, impossible to continue")
+      );
+
+      await updateCustomer(
+        mockReq as any,
+        mockRes as any as Response
+      );
+
+      expect(mockRes.statusCode).toBe(500);
       expect(mockRes.responseData).toHaveProperty("error");
     });
   });
@@ -362,8 +444,7 @@ describe("Customer Controller", () => {
 
       await deleteCustomer(
         mockReq as any,
-        mockRes as any as Response,
-        mockPrisma,
+        mockRes as any as Response
       );
 
       expect(mockRes.statusCode).toBe(200);
@@ -375,11 +456,38 @@ describe("Customer Controller", () => {
 
       await deleteCustomer(
         mockReq as any,
-        mockRes as any as Response,
-        mockPrisma,
+        mockRes as any as Response
       );
 
       expect(mockRes.statusCode).toBe(404);
+      expect(mockRes.responseData).toHaveProperty("error");
+    });
+
+    it("Should return 400 due to missing parameter", async () => {
+      const mockReq = { params: { }, body: {} } as any;
+
+      await deleteCustomer(
+        mockReq as any,
+        mockRes as any as Response
+      );
+
+      expect(mockRes.statusCode).toBe(400);
+      expect(mockRes.responseData).toHaveProperty("error");
+    });
+
+    it("Should fail with code 500 due to database error", async () => {
+      const mockReq = {params: {id: "1"}, body: {}};
+
+      mockPrismaCustomer.delete.mockRejectedValueOnce(
+        new Error("Error in the database, impossible to continue")
+      );
+
+      await deleteCustomer(
+        mockReq as any,
+        mockRes as any as Response
+      );
+
+      expect(mockRes.statusCode).toBe(500);
       expect(mockRes.responseData).toHaveProperty("error");
     });
   });
