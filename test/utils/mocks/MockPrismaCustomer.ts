@@ -38,6 +38,23 @@ const mockPrismaCustomer = {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
+    }else if (where.id === "3") {
+      return {
+        id: "3",
+        name: "Albert",
+        surname: "Gilbert",
+        email: "albert@example.com",
+        phone: "1234567890",
+        pIva: null,
+        cFiscale: "ABC123",
+        comuneResidenza: "Roma",
+        cap: "00100",
+        via: "Via Roma",
+        numeroCivico: "1",
+        tipoClienteId: "type-1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
     }
     return null;
   }),
