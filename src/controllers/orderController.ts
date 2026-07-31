@@ -91,7 +91,7 @@ export const deleteOrder = async (req: Request, res: Response) => {
         await prisma.ordiniMagazzino.delete({
             where: { id: id },
         });
-        res.status(204).send();
+        res.status(204);
     } catch (error) {
         console.error(`Error deleting order with ID ${id}:`, error);
         res.status(500).json({ error: "Internal server error" });
@@ -189,7 +189,7 @@ export const removeProductFromOrder = async (req: Request, res: Response) => {
                 prodottoId: productId
             }
         });
-        res.status(204).send();
+        res.status(204);
     } catch (error) {
         console.error(`Error removing product from order with ID ${orderId}:`, error);
         res.status(500).json({ error: "Internal server error" });
