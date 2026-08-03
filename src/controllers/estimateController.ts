@@ -190,6 +190,12 @@ export const deleteEstimate = async (req: Request, res: Response) => {
  */
 export const getSectionsByEstimateId = async (req: Request, res: Response) => {
     const { estimateId } = req.params;
+
+    if (!estimateId)
+        return res.status(400).json({
+            error: "Missing required parameter: estimateId"
+        });
+
     try {
         const sections = await prisma.sezionePreventivo.findMany({
             where: { preventivoId: estimateId },
@@ -209,12 +215,15 @@ export const addSectionToEstimate = async (req: Request, res: Response) => {
     const { estimateId } = req.params;
     const { nome } = req.body;
 
+    if (!estimateId) {
+        return res.status(400).json({ error: "Missing required parameter: estimateId" });
+    }
+
     if (!nome) {
         return res.status(400).json({ error: "Missing required field: nome" });
     }
 
     try {
-        console.log("ID: ", estimateId);
         const estimate = await prisma.preventivo.findUnique({
             where: { id: estimateId },
         });
@@ -241,6 +250,14 @@ export const addSectionToEstimate = async (req: Request, res: Response) => {
 export const updateSectionNameInEstimate = async (req: Request, res: Response) => {
     const { estimateId, sectionId } = req.params;
     const { nome } = req.body;
+
+    if (!estimateId) {
+        return res.status(400).json({ error: "Missing required parameter: estimateId" });
+    }
+
+    if (!sectionId) {
+        return res.status(400).json({ error: "Missing required parameter: sectionId" });
+    }
 
     if (!nome) {
         return res.status(400).json({ error: "Missing required field: nome" });
@@ -269,13 +286,33 @@ export const updateSectionNameInEstimate = async (req: Request, res: Response) =
 export const deleteSectionFromEstimate = async (req: Request, res: Response) => {
     const { estimateId, sectionId } = req.params;
 
+    if (!estimateId) {
+        return res.status(400).json({ error: "Missing required parameter: estimateId" });
+    }
+
+    if (!sectionId) {
+        return res.status(400).json({ error: "Missing required parameter: sectionId" });
+    }
+
     try {
+        const estimate = await prisma.preventivo.findUnique({
+            where: { id: estimateId },
+        });
+
+        if (!estimate) {
+            return res.status(404).json({ error: "Estimate not found" });
+        }
+
         const section = await prisma.sezionePreventivo.findUnique({
             where: { id: sectionId },
         });
 
-        if (!section || section.preventivoId !== estimateId) {
+        if (!section) {
             return res.status(404).json({ error: "Section not found for this estimate" });
+        }
+
+        if(section.preventivoId !== estimateId) {
+            return res.status(409).json({ error: "Section estimate does not correspond to the passed estimateId"});
         }
 
         await prisma.sezionePreventivo.delete({
