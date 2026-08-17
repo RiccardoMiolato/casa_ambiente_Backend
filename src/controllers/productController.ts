@@ -233,6 +233,13 @@ export const updateProductType = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { tipoProdotto } = req.body;
 
+    if(!id)
+        return res.status(400).json({error: "Missing id parameter in the request"});
+
+    if(!tipoProdotto){
+        return res.status(400).json({error: "tipoProdotto is required"});
+    }
+
     try {
         const existingProductType = await prisma.tipologiaProdotto.findUnique({
             where: { id: id },
@@ -254,6 +261,9 @@ export const updateProductType = async (req: Request, res: Response) => {
 export const deleteProductType = async (req: Request, res: Response) => {
     const { id } = req.params;
 
+    if(!id)
+        return res.status(400).json({error: "Missing id parameter in the request"});
+
     try {
         const existingProductType = await prisma.tipologiaProdotto.findUnique({
             where: { id: id },
@@ -265,7 +275,7 @@ export const deleteProductType = async (req: Request, res: Response) => {
         await prisma.tipologiaProdotto.delete({
             where: { id: id },
         });
-        res.status(200).json({ message: "Product type deleted successfully" });
+        res.status(204);
     } catch (error) {
         res.status(500).json({ error: "Failed to delete product type" });
     }
