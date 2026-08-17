@@ -1,6 +1,7 @@
+import express from "express";
 import { createOrder, deleteOrder, getAllOrders, getOrderById, updateOrder } from "../controllers/orderController";
 
-const router = require("express").Router();
+const router = express.Router();
 
 // GET /orders
 router.get("/", getAllOrders);
