@@ -16,6 +16,10 @@ export const getAllProducers = async (req: Request, res: Response) => {
 
 export const getProducerById = async (req: Request, res: Response) => {
     const { id } = req.params;
+
+    if(!id)
+        return res.status(400).json({ error: "Missing id parameter in the request"});
+
     try {
         const producer = await prisma.produttore.findUnique({
             where: { id: id },
@@ -37,10 +41,8 @@ export const createProducer = async (req: Request, res: Response) => {
         sitoweb
     } = req.body;
 
-    if(!nome){
-        return res.status(400).json({
-            error: "Nome is required"
-        })
+    if(!nome || !email || !telefono || !sitoweb){
+        return res.status(400).json({error: "Request is badly formatted, check the presence of all required fields such as\nnome, email, telefono, sitoweb"});
     }
 
     try {
@@ -66,6 +68,10 @@ export const updateProducer = async (req: Request, res: Response) => {
         telefono,
         sitoweb
     } = req.body;
+
+    if(!id)
+        return res.status(400).json({ error: "Missing required parameter: id"});
+
     try {
         const updatedProducer = await prisma.produttore.update({
             where: { id: id },
@@ -76,6 +82,10 @@ export const updateProducer = async (req: Request, res: Response) => {
                 sitoweb
             },
         });
+
+        if(!updatedProducer)
+            return res.status(404).json({error: `Producer with id ${id} not found`});
+
         res.status(200).json(updatedProducer);
     } catch (error) {
         res.status(500).json({ error: 'Failed to update producer' });
@@ -84,7 +94,18 @@ export const updateProducer = async (req: Request, res: Response) => {
 
 export const deleteProducer = async (req: Request, res: Response) => {
     const { id } = req.params;
+
+    if(!id)
+        return res.status(400).json({ error: "Missing required parameter: id"});
+
     try {
+        const produttore = await prisma.produttore.findUnique({
+            where: {id: id}
+        });
+
+        if(!produttore)
+            return res.status(404).json({error: `Producer with id ${id} not found`});
+
         await prisma.produttore.delete({
             where: { id: id },
         });
