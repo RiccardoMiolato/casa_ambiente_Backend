@@ -15,6 +15,10 @@ export const getAllProducts = async (req: Request, res: Response) => {
 
 export const getProductById = async (req: Request, res: Response) => {
     const { id } = req.params;
+
+    if(!id)
+        return res.status(400).json({error: "Missing id parameter in the request"});
+
     try {
         const product = await prisma.prodotto.findUnique({
             where: { id: id },
@@ -31,10 +35,18 @@ export const getProductById = async (req: Request, res: Response) => {
 export const getProductsByProducerId = async (req: Request, res: Response) => {
     const { id } = req.params; // Producer ID
 
+    if(!id)
+        return res.status(400).json({error: "Missing id parameter in the request"});
+
     try {
         const products = await prisma.prodotto.findMany({
             where: { produttoreId: id },
         });
+
+        if(!products || products.length === 0) {
+            return res.status(404).json({ error: "No products found for the producer" });
+        }
+
         res.status(200).json(products);
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch products for the producer" });
@@ -116,6 +128,9 @@ export const updateProduct = async (req: Request, res: Response) => {
         prezzo
     } = req.body;
 
+    if(!id)
+        return res.status(400).json({error: "Missing id parameter in the request"});
+
     try {
         const existingProduct = await prisma.prodotto.findUnique({
             where: { id: id },
@@ -163,6 +178,9 @@ export const updateProduct = async (req: Request, res: Response) => {
 
 export const deleteProduct = async (req: Request, res: Response) => {
     const { id } = req.params;
+
+    if(!id)
+        return res.status(400).json({error: "Missing id parameter in the request"});
 
     try {
         const existingProduct = await prisma.prodotto.findUnique({
