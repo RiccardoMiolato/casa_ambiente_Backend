@@ -1,6 +1,6 @@
 import { mock } from "bun:test";
 
-const product1 = {
+export const product1 = {
     id: "1",
     codiceProdotto: "P001",
     codiceColore: "C001",
@@ -14,7 +14,7 @@ const product1 = {
     updatedAt: new Date()
 }
 
-const product2 = {
+export const product2 = {
     id: "2",
     codiceProdotto: "P002",
     codiceColore: "C002",
@@ -28,7 +28,7 @@ const product2 = {
     updatedAt: new Date()
 }
 
-const product3 = {
+export const product3 = {
     id: "3",
     codiceProdotto: "P003",
     codiceColore: "C003",

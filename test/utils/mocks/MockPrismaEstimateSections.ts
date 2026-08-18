@@ -1,4 +1,5 @@
 import { mock } from "bun:test";
+import { product1, product2 } from "./MockPrismaProduct";
 
 const estimate1Section1 = {
     id: "1",
@@ -48,18 +49,45 @@ const mockPrismaEstimateSections = {
         }
         return [];
     }),
-    findUnique: mock(({ where }) => {
-        switch(where.id) {
-            case "1":
-                return estimate1Section1;
-            case "2":
-                return estimate1Section2;
-            case "3":
-                return estimate2Section1;
-            case "4":
-                return estimate2Section2;
-            default:
-                return null;
+    findUnique: mock(({ where, include }) => {
+        if(!include){
+            switch(where.id) {
+                case "1":
+                    return estimate1Section1;
+                case "2":
+                    return estimate1Section2;
+                case "3":
+                    return estimate2Section1;
+                case "4":
+                    return estimate2Section2;
+                default:
+                    return null;
+            }
+        } else {
+            switch(where.id) {
+                case "1":
+                    return {
+                        ...estimate1Section1,
+                        prodotti: [product1, product2]
+                    };
+                case "2":
+                    return {
+                        ...estimate1Section2,
+                        prodotti: [product1, product2]
+                    };
+                case "3":
+                    return {
+                        ...estimate2Section1,
+                        prodotti: [product1, product2]
+                    };
+                case "4":
+                    return {
+                        ...estimate2Section2,
+                        prodotti: [product1, product2]
+                    };
+                default:
+                    return null;
+            }
         }
     }),
     create: mock(({ data }) => {

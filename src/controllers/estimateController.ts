@@ -330,6 +330,10 @@ export const deleteSectionFromEstimate = async (req: Request, res: Response) => 
 export const getProductsBySectionId = async (req: Request, res: Response) => {
     const { estimateId, sectionId } = req.params;
 
+    if (!estimateId || !sectionId) {
+        return res.status(400).json({error: "Missing"})
+    }
+
     try {
         const estimate = await prisma.preventivo.findUnique({
             where: { id: estimateId }
@@ -355,12 +359,11 @@ export const getProductsBySectionId = async (req: Request, res: Response) => {
         }
 
         if(estimateSection.preventivoId !== estimateId) {
-            res.status(409).json({ error: "Section does not belong to the specified estimate"});
+            return res.status(409).json({ error: "Section does not belong to the specified estimate"});
         }
 
-
-
-        res.status(200).json(estimateSection);
+        // Despite the error, the field pordotti exists
+        res.status(200).json(estimateSection.prodotti);
     } catch (error) {
         res.status(500).json({ error: "Internal server error" });
     }
@@ -370,9 +373,16 @@ export const addProductToSection = async (req: Request, res: Response) => {
     const { sectionId } = req.params;
     const { productId, quantity } = req.body;
 
-    if (!productId) {
-        return res.status(400).json({ error: "Missing required field: productId" });
+    if(!sectionId) {
+        return res.status(400).json({ error: "Missing required parameter: sectionId"});
     }
+
+    if (!productId || !quantity) {
+        return res.status(400).json({ error: "Missing one or more required fields: productId, quantity" });
+    }
+
+    if(quantity < 0)
+        return res.status(400).json({ error: "Quantity must be a non-negative number" });
 
     try {
         const section = await prisma.sezionePreventivo.findUnique({
@@ -394,7 +404,7 @@ export const addProductToSection = async (req: Request, res: Response) => {
         const newSectionProduct = await prisma.prodottoSezione.create({
             data: {
                 quantità: quantity,
-                prezzo: product.prezzo,
+                prezzo: product.prezzo,  // TODO: implement sales
                 sezione: {
                     connect: { id: sectionId },
                 },
@@ -414,12 +424,18 @@ export const updateProductQuantityInSection = async (req: Request, res: Response
     const { sectionId, productId } = req.params;
     const { quantity } = req.body;
 
-    if (quantity === undefined) {
+    if(!sectionId || !productId) {
+        return res.status(400).json({ error: "Missing required parameters: sectionId andd/or productId"});
+    }
+
+    if (!quantity) {
         return res.status(400).json({ error: "Missing required field: quantity" });
+    } else if (quantity < 0) {
+        return res.status(400).json({ error: "Product quantity in an esimate must be positive" });
     }
 
     try {
-        const sectionProduct = await prisma.prodottoSezione.findFirst({
+        const sectionProduct = await prisma.prodottoSezione.findUnique({
             where: {
                 sezioneId: sectionId,
                 prodottoId: productId,
@@ -435,7 +451,7 @@ export const updateProductQuantityInSection = async (req: Request, res: Response
             data: { quantità: quantity },
         });
 
-        res.json(updatedSectionProduct);
+        res.status(200).json(updatedSectionProduct);
     } catch (error) {
         res.status(500).json({ error: "Internal server error" });
     }
@@ -444,8 +460,12 @@ export const updateProductQuantityInSection = async (req: Request, res: Response
 export const removeProductFromSection = async (req: Request, res: Response) => {
     const { sectionId, productId } = req.params;
 
+    if(!sectionId || !productId) {
+        return res.status(400).json({ error: "Missing required parameters: sectionId and/or productId" });
+    }
+
     try {
-        const sectionProduct = await prisma.prodottoSezione.findFirst({
+        const sectionProduct = await prisma.prodottoSezione.findUnique({
             where: {
                 sezioneId: sectionId,
                 prodottoId: productId,

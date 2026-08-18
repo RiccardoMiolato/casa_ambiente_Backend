@@ -1,14 +1,18 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { Response } from "express";
-import { addSectionToEstimate, createEstimate, deleteEstimate, deleteSectionFromEstimate, getAllEstimates, getEstimateById, getEstimatesByCustomerId, getSectionsByEstimateId, updateEstimate, updateSectionNameInEstimate } from "../../src/controllers/estimateController";
+import { addProductToSection, addSectionToEstimate, createEstimate, deleteEstimate, deleteSectionFromEstimate, getAllEstimates, getEstimateById, getEstimatesByCustomerId, getProductsBySectionId, getSectionsByEstimateId, removeProductFromSection, updateEstimate, updateProductQuantityInSection, updateSectionNameInEstimate } from "../../src/controllers/estimateController";
 import mockPrismaCustomer from "../utils/mocks/MockPrismaCustomer";
 import mockPrismaEstimate from "../utils/mocks/MockPrismaEstimate";
+import mockPrismaEstimateSectionProducts from "../utils/mocks/MockPrismaEstimateSectionProducts";
 import mockPrismaEstimateSections from "../utils/mocks/MockPrismaEstimateSections";
+import mockPrismaProduct, { product1 } from "../utils/mocks/MockPrismaProduct";
 import MockResponse from "../utils/mocks/MockResponse";
 
 const mockPrisma = {
     preventivo: mockPrismaEstimate,
     sezionePreventivo: mockPrismaEstimateSections,
+    prodottoSezione: mockPrismaEstimateSectionProducts,
+    prodotto: mockPrismaProduct,
     customer: mockPrismaCustomer,
     $disconnect: mock(async () => {})
 } as any;
@@ -788,6 +792,426 @@ describe("Estimate Sections Controller", () => {
                 mockReq as any,
                 mockRes as any as Response
             );
+
+            expect(mockRes.statusCode).toBe(500);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+    });
+});
+
+
+describe("Section-Products Controller", () => {
+    let mockRes: MockResponse;
+
+    beforeEach(() => {
+        mockPrismaCustomer.findMany.mockClear();
+        mockPrismaCustomer.findUnique.mockClear();
+        mockPrismaCustomer.create.mockClear();
+        mockPrismaCustomer.update.mockClear();
+        mockPrismaCustomer.delete.mockClear();
+
+        mockPrismaEstimate.findMany.mockClear();
+        mockPrismaEstimate.findUnique.mockClear();
+        mockPrismaEstimate.create.mockClear();
+        mockPrismaEstimate.update.mockClear();
+        mockPrismaEstimate.delete.mockClear();
+
+        mockPrismaEstimateSections.findMany.mockClear();
+        mockPrismaEstimateSections.findUnique.mockClear();
+        mockPrismaEstimateSections.create.mockClear();
+        mockPrismaEstimateSections.update.mockClear();
+        mockPrismaEstimateSections.delete.mockClear();
+
+        mockPrismaEstimateSectionProducts.create.mockClear();
+        mockPrismaEstimateSectionProducts.update.mockClear();
+        mockPrismaEstimateSectionProducts.delete.mockClear();
+
+        mockRes = new MockResponse();
+    })
+
+    describe("getProductsBySectionId", () => {
+        it("Should succeed with code 200 returning products relative to a single section", async () => {
+            const mockReq = { params: { estimateId: "1", sectionId: "1"}, body: {}};
+
+            await getProductsBySectionId(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(200);
+            expect(mockRes.responseData).toBeArrayOfSize(2);
+            expect(mockRes.responseData[0]).toHaveProperty("id");
+            expect(mockRes.responseData[0]).toHaveProperty("codiceProdotto");
+            expect(mockRes.responseData[0]).toHaveProperty("codiceColore");
+            expect(mockRes.responseData[0]).toHaveProperty("descrizione");
+            expect(mockRes.responseData[0]).toHaveProperty("tipoProdottoId");
+            expect(mockRes.responseData[0]).toHaveProperty("produttoreId");
+            expect(mockRes.responseData[0]).toHaveProperty("dimensione");
+            expect(mockRes.responseData[0]).toHaveProperty("dimensione");
+            expect(mockRes.responseData[0]).toHaveProperty("prezzo");
+        });
+
+        it("Should fail with code 400 due to missing estimate id", async () => {
+            const mockReq = { params: { sectionId: "1" }, body: {}};
+
+            await getProductsBySectionId(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 400 due to missing section id", async () => {
+            const mockReq = { params: { estimateId: "1" }, body: {}};
+
+            await getProductsBySectionId(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 404 due to non-existing estimate", async () => {
+            const mockReq = { params: { estimateId: "fake-id", sectionId: "1"}, body: {}};
+
+            await getProductsBySectionId(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(404);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 404 due to non-existing section", async () => {
+            const mockReq = { params: { estimateId: "1", sectionId: "fake-id"}, body: {}};
+
+            await getProductsBySectionId(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(404);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 409 due to wrong id for estimate given estimate section", async () => {
+            const mockReq = { params: { estimateId: "2", sectionId: "1"}, body: {}};
+
+            await getProductsBySectionId(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(409);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 500 due to internal server error", async () => {
+            const mockReq = { params: { estimateId: "2", sectionId: "1"}, body: {}};
+
+            mockPrismaEstimateSections.findUnique.mockRejectedValueOnce(
+                new Error("Internal server error")
+            );
+
+            await getProductsBySectionId(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(500);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+    });
+
+    describe("addProductToSection", () => {
+        it("Should succeed with code 201 adding a product to a section", async () => {
+            const mockReq = { params: { sectionId: "1" }, body: { productId: "1", quantity: 5}};
+
+            await addProductToSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(201);
+            expect(mockRes.responseData.quantità).toBe(5);
+            expect(mockRes.responseData.prezzo).toBe(product1.prezzo);
+            expect(mockRes.responseData.sezione.connect.id).toBe("1");
+            expect(mockRes.responseData.prodotto.connect.id).toBe("1");
+        });
+
+        it("Should fail with code 400 due to missing section id", async () => {
+            const mockReq = { params: {  }, body: { productId: "1", quantity: 5}};
+
+            await addProductToSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 400 due to missing product id", async () => {
+            const mockReq = { params: { sectionId: "1" }, body: { quantity: 5}};
+
+            await addProductToSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 400 due to missing quantity", async () => {
+            const mockReq = { params: { sectionId: "1" }, body: { productId: "1" }};
+
+            await addProductToSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 404 due to wrong section id", async () => {
+            const mockReq = { params: { sectionId: "fake-id" }, body: { productId: "1", quantity: 5}};
+
+            await addProductToSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(404);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 404 due to wrong section id", async () => {
+            const mockReq = { params: { sectionId: "1" }, body: { productId: "fake-id", quantity: 5}};
+
+            await addProductToSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(404);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 400 due to negative quantity", async () => {
+            const mockReq = { params: { sectionId: "1" }, body: { productId: "1", quantity: -1}};
+
+            await addProductToSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 500 due to internal server error", async () => {
+            const mockReq = { params: { sectionId: "1" }, body: { productId: "1", quantity: 5}};
+
+            mockPrismaEstimateSectionProducts.create.mockRejectedValueOnce(
+                new Error("Internal server error")
+            );
+
+            await addProductToSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(500);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+    });
+
+    describe("updateProductQuantityInSection", async () => {
+        it("Should update quantity correctly with code 200", async () => {
+            const mockReq = { params: { sectionId: "1", productId: "1" }, body: { quantity: 10 } };
+
+            await updateProductQuantityInSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(200);
+            expect(mockRes.responseData.quantità).toBe(10);
+        });
+
+        it("Should fail with code 400 due to missing section id", async () => {
+            const mockReq = { params: { productId: "1" }, body: { quantity: 10 } };
+
+            await updateProductQuantityInSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 400 due to missing product id", async () => {
+            const mockReq = { params: { sectionId: "1" }, body: { quantity: 10 } };
+
+            await updateProductQuantityInSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 400 due to missing quantity", async () => {
+            const mockReq = { params: { sectionId: "1", productId: "1" }, body: { } };
+
+            await updateProductQuantityInSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 400 due to negative quantity", async () => {
+            const mockReq = { params: { sectionId: "1", productId: "1" }, body: { quantity: -1 } };
+
+            await updateProductQuantityInSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 404 due to wrong section id", async () => {
+            const mockReq = { params: { sectionId: "fake-id", productId: "1" }, body: { quantity: 10 } };
+
+            await updateProductQuantityInSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(404);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 404 due to wrong product id", async () => {
+            const mockReq = { params: { sectionId: "1", productId: "fake-id" }, body: { quantity: 10 } };
+
+            await updateProductQuantityInSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(404);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 500 due to internal server error", async () => {
+            const mockReq = { params: { sectionId: "1", productId: "1" }, body: { quantity: 10 } };
+
+            mockPrismaEstimateSectionProducts.update.mockRejectedValueOnce(
+                new Error("Internal server error")
+            );
+
+            await updateProductQuantityInSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(500);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+    });
+
+    describe("removeProductFromSection", () => {
+        it("Should succeed with code 204 removing a product from a section", async () => {
+            const mockReq = { params: { sectionId: "1", productId: "1"}, body: {}};
+
+            await removeProductFromSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+
+            expect(mockRes.statusCode).toBe(204);
+        });
+
+        it("Should fail with code 400 due to missing parameter: sectionId", async () => {
+            const mockReq = { params: { productId: "1"}, body: {}};
+
+            await removeProductFromSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 400 due to missing parameter: productId", async () => {
+            const mockReq = { params: { sectionId: "1" }, body: {}};
+
+            await removeProductFromSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 404 due to wrong parameter: sectionId", async () => {
+            const mockReq = { params: { sectionId: "fake-id", productId: "1" }, body: {}};
+
+            await removeProductFromSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+
+            expect(mockRes.statusCode).toBe(404);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 404 due to wrong parameter: productId", async () => {
+            const mockReq = { params: { sectionId: "1", productId: "fake-id" }, body: {}};
+
+            await removeProductFromSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+
+            expect(mockRes.statusCode).toBe(404);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 500 due to internal server error", async () => {
+            const mockReq = { params: { sectionId: "1", productId: "1" }, body: {}};
+
+            mockPrismaEstimateSectionProducts.delete.mockRejectedValueOnce(
+                new Error("Internal server error")
+            );
+
+            await removeProductFromSection(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
 
             expect(mockRes.statusCode).toBe(500);
             expect(mockRes.responseData).toHaveProperty("error");
