@@ -6,37 +6,49 @@ export const getAllOrders = async (req: Request, res: Response) => {
         const orders = await prisma.ordiniMagazzino.findMany();
         res.status(200).json(orders);
     } catch (error) {
-        console.error("Error fetching orders:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 };
 
 export const getOrderById = async (req: Request, res: Response) => {
     const { id } = req.params;
+
+    if(!id)
+        return res.status(400).json({ error: "Missing required parameter: id" });
+
     try {
         const order = await prisma.ordiniMagazzino.findUnique({
             where: { id: id },
         });
-        if (order) {
-            res.status(200).json(order);
-        } else {
-            res.status(404).json({ error: "Order not found" });
+        if (!order) {
+            return res.status(404).json({ error: "Order not found" });
         }
+
+        res.status(200).json(order);
     } catch (error) {
-        console.error(`Error fetching order with ID ${id}:`, error);
         res.status(500).json({ error: "Internal server error" });
     }
 };
 
 export const getOrdersByCustomerId = async (req: Request, res: Response) => {
     const { customerId } = req.params;
+
+    if(!customerId)
+        return res.status(400).json({ error: "Missing required parameter: customerId" });
+
     try {
+        const customer = await prisma.customer.findUnique({
+            where: { id: customerId },
+        });
+        if(!customer) {
+            return res.status(404).json({ error: "Customer not found" });
+        };
+
         const orders = await prisma.ordiniMagazzino.findMany({
             where: { clienteId: customerId },
         });
         res.status(200).json(orders);
     } catch (error) {
-        console.error(`Error fetching orders for customer ID ${customerId}:`, error);
         res.status(500).json({ error: "Internal server error" });
     }
 }
@@ -54,6 +66,13 @@ export const createOrder = async (req: Request, res: Response) => {
     }
 
     try {
+        const customer = await prisma.customer.findUnique({
+            where: { id: clienteId },
+        });
+        if(!customer) {
+            return res.status(404).json({ error: "Customer not found" });
+        };
+
         const newOrder = await prisma.ordiniMagazzino.create({
             data: {
                 clienteId,
@@ -63,7 +82,6 @@ export const createOrder = async (req: Request, res: Response) => {
         });
         res.status(201).json(newOrder);
     } catch (error) {
-        console.error("Error creating order:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 }
@@ -72,14 +90,29 @@ export const updateOrder = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { clienteId, tipologia, nome } = req.body;
 
+    if(!id)
+        return res.status(400).json({ error: "Missing required parameter: id" });
+
     try {
+        const customer = await prisma.customer.findUnique({
+            where: { id: clienteId },
+        });
+        if(!customer) {
+            return res.status(404).json({ error: "Customer not found" });
+        };
+
+        const order = await prisma.ordiniMagazzino.findUnique({
+            where: { id: id}
+        });
+        if(!order)
+            return res.status(404).json({ error: "Order not found" });
+
         const updatedOrder = await prisma.ordiniMagazzino.update({
             where: { id: id },
             data: { clienteId, tipologia, nome },
         });
         res.status(200).json(updatedOrder);
     } catch (error) {
-        console.error(`Error updating order with ID ${id}:`, error);
         res.status(500).json({ error: "Internal server error" });
     }
 }
@@ -87,13 +120,21 @@ export const updateOrder = async (req: Request, res: Response) => {
 export const deleteOrder = async (req: Request, res: Response) => {
     const { id } = req.params;
 
+    if(!id)
+        return res.status(400).json({ error: "Missing required parameter: id" });
+
     try {
+        const order = await prisma.ordiniMagazzino.findUnique({
+            where: { id: id}
+        });
+        if(!order)
+            return res.status(404).json({ error: "Order not found" });
+
         await prisma.ordiniMagazzino.delete({
             where: { id: id },
         });
         res.status(204);
     } catch (error) {
-        console.error(`Error deleting order with ID ${id}:`, error);
         res.status(500).json({ error: "Internal server error" });
     }
 }
