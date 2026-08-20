@@ -148,13 +148,32 @@ export const addProductToOrder = async (req: Request, res: Response) => {
     const { orderId } = req.params;
     const { productId, quantity } = req.body;
 
+    if(!orderId)
+        return res.status(400).json({ error: "Missing required parameter: orderId" });
+
     if (!productId || !quantity) {
         return res.status(400).json({
             error: "Missing required fields: productId and quantity are required"
         })
     }
 
+    if(quantity <= 0) {
+        return res.status(400).json({ error: "Quantity must be greater than 0" });
+    }
+
     try {
+        const order = await prisma.ordiniMagazzino.findUnique({
+            where: {id: orderId}
+        });
+        if(!order)
+            return res.status(404).json({ error: "Order not found"});
+
+        const product = await prisma.prodotto.findUnique({
+            where: {id: productId}
+        });
+        if(!product)
+            return res.status(404).json({ error: "Product not found"});
+
         const orderProduct = await prisma.prodottoOrdine.create({
             data: {
                 quantità: quantity,
@@ -168,7 +187,6 @@ export const addProductToOrder = async (req: Request, res: Response) => {
         })
         res.status(201).json(orderProduct);
     } catch (error) {
-        console.error(`Error adding product to order with ID ${orderId}:`, error);
         res.status(500).json({ error: "Internal server error" });
     }
 }
@@ -177,13 +195,31 @@ export const updateProductInOrder = async (req: Request, res: Response) => {
     const { orderId, productId } = req.params;
     const { quantity } = req.body;
 
+    if(!orderId || !productId) {
+        return res.status(400).json({ error: "Missing required parameters: orderId and productId are required" });
+    }
+
     if (!quantity) {
-        return res.status(400).json({
-            error: "Missing required field: quantity is required"
-        })
+        return res.status(400).json({ error: "Missing required field: quantity is required" });
+    }
+
+    if(quantity < 0) {
+        return res.status(400).json({ error: "Quantity must be greater than or equal to 0" });
     }
 
     try {
+        const order = await prisma.ordiniMagazzino.findUnique({
+            where: {id: orderId}
+        });
+        if(!order)
+            return res.status(404).json({ error: "Order not found"});
+
+        const product = await prisma.prodotto.findUnique({
+            where: {id: productId}
+        });
+        if(!product)
+            return res.status(404).json({ error: "Product not found"});
+
         const updatedOrderProduct = await prisma.prodottoOrdine.update({
             where: {
                 movimentoId: orderId,
@@ -202,7 +238,6 @@ export const updateProductInOrder = async (req: Request, res: Response) => {
 
         res.status(200).json(updatedOrderProduct);
     } catch (error) {
-        console.error(`Error updating product in order with ID ${orderId}:`, error);
         res.status(500).json({ error: "Internal server error" });
     }
 }
@@ -210,14 +245,18 @@ export const updateProductInOrder = async (req: Request, res: Response) => {
 export const removeProductFromOrder = async (req: Request, res: Response) => {
     const { orderId, productId } = req.params;
 
+    if(!orderId || !productId) {
+        return res.status(400).json({ error: "Missing required parameters: orderId and productId are required" });
+    }
+
     try {
         const orderProduct = await prisma.prodottoOrdine.findUnique({
             where: {
-                movimentoId: orderId,
-                prodottoId: productId
+                prodottoId: productId,
+                movimentoId: orderId
             }
-        })
-
+        });
+        console.log(orderProduct);
         if (!orderProduct) {
             return res.status(404).json({
                 error: `Product ${productId} not found for order ${orderId}`

@@ -1,13 +1,17 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { Response } from "express";
-import { createOrder, deleteOrder, getAllOrders, getOrderById, getOrdersByCustomerId, updateOrder } from "../../src/controllers/orderController";
+import { addProductToOrder, createOrder, deleteOrder, getAllOrders, getOrderById, getOrdersByCustomerId, removeProductFromOrder, updateOrder, updateProductInOrder } from "../../src/controllers/orderController";
 import mockPrismaCustomer from "../utils/mocks/MockPrismaCustomer";
 import mockPrismaOrder from "../utils/mocks/MockPrismaOrder";
+import mockPrismaOrderProducts from "../utils/mocks/MockPrismaOrderProducts";
+import mockPrismaProduct from "../utils/mocks/MockPrismaProduct";
 import MockResponse from "../utils/mocks/MockResponse";
 
 const mockPrisma = {
     customer: mockPrismaCustomer,
     ordiniMagazzino: mockPrismaOrder,
+    prodottoOrdine: mockPrismaOrderProducts,
+    prodotto: mockPrismaProduct,
     $disconnect: mock(async () => {}),
 }
 
@@ -431,6 +435,330 @@ describe("Order Controller", () => {
             });
 
             await deleteOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(500);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+    });
+});
+
+describe("Order Products Controller", () => {
+    let mockRes: MockResponse;
+
+    beforeEach(() => {
+        mockPrismaOrder.findMany.mockClear();
+        mockPrismaOrder.findUnique.mockClear();
+        mockPrismaOrder.create.mockClear();
+        mockPrismaOrder.update.mockClear();
+        mockPrismaOrder.delete.mockClear();
+
+        mockPrismaProduct.findMany.mockClear();
+        mockPrismaProduct.findUnique.mockClear();
+        mockPrismaProduct.create.mockClear();
+        mockPrismaProduct.update.mockClear();
+        mockPrismaProduct.delete.mockClear();
+
+        mockPrismaOrderProducts.findMany.mockClear();
+        mockPrismaOrderProducts.findUnique.mockClear();
+        mockPrismaOrderProducts.create.mockClear();
+        mockPrismaOrderProducts.update.mockClear();
+        mockPrismaOrderProducts.delete.mockClear();
+
+        mockRes = new MockResponse();
+    });
+
+    describe("addProductToOrder", () => {
+        it("Should succeed to add a product to an order with code 201", async () => {
+            const mockReq = { params: { orderId: "1" }, body: { productId: "1", quantity: 2} };
+
+            await addProductToOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(201);
+            expect(mockRes.responseData.movimento.connect.id).toBe("1");
+            expect(mockRes.responseData.prodotto.connect.id).toBe("1");
+            expect(mockRes.responseData).toHaveProperty("quantità", 2);
+        });
+
+
+        it("Should fail with code 400 due to missing orderId", async () => {
+            const mockReq = { params: { }, body: { productId: "1", quantity: 2} };
+
+            await addProductToOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 400 due to missing productId", async () => {
+            const mockReq = { params: { orderId: "1" }, body: { quantity: 2} };
+
+            await addProductToOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 400 due to missing quantity", async () => {
+            const mockReq = { params: { orderId: "1" }, body: { productId: "1" } };
+
+            await addProductToOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 400 due to negative quantity", async () => {
+            const mockReq = { params: { orderId: "1" }, body: { productId: "1", quantity: -1 } };
+
+            await addProductToOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 404 due to wrong orderId", async () => {
+            const mockReq = { params: { orderId: "fake-id" }, body: { productId: "1", quantity: 1 } };
+
+            await addProductToOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(404);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 404 due to wrong productId", async () => {
+            const mockReq = { params: { orderId: "1" }, body: { productId: "fake-id", quantity: 1 } };
+
+            await addProductToOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(404);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 500 due to internal server error", async () => {
+            const mockReq = { params: { orderId: "1" }, body: { productId: "1", quantity: 1 } };
+
+            mockPrismaOrderProducts.create.mockImplementationOnce(() => {
+                throw new Error("Internal server error");
+            });
+
+            await addProductToOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(500);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+    });
+
+    describe("updateProductInOrder", () => {
+        it("Should succeed to update a product in an order with code 200", async () => {
+            const mockReq = { params: { orderId: "1", productId: "1" }, body: { quantity: 5 } };
+
+            await updateProductInOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(200);
+            expect(mockRes.responseData).toHaveProperty("quantità", 5);
+        });
+
+        it("Should fail with code 400 due to missing orderId", async () => {
+            const mockReq = { params: { productId: "1" }, body: { quantity: 5 } };
+
+            await updateProductInOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 400 due to missing productId", async () => {
+            const mockReq = { params: { orderId: "1" }, body: { quantity: 5 } };
+
+            await updateProductInOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 400 due to missing quantity", async () => {
+            const mockReq = { params: { orderId: "1", productId: "1" }, body: {} };
+
+            await updateProductInOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 400 due to negative quantity", async () => {
+            const mockReq = { params: { orderId: "1", productId: "1" }, body: {quantity: -1} };
+
+            await updateProductInOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 404 due to non-existing productId combination", async () => {
+            const mockReq = { params: { orderId: "fake-id", productId: "1" }, body: { quantity: 5 } };
+
+            mockPrismaOrderProducts.update.mockImplementationOnce(() => {
+                throw new Error("Record to update not found.");
+            });
+
+            await updateProductInOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(404);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 404 due to non-existing productId combination", async () => {
+            const mockReq = { params: { orderId: "1", productId: "fake-id" }, body: { quantity: 5 } };
+
+            mockPrismaOrderProducts.update.mockImplementationOnce(() => {
+                throw new Error("Record to update not found.");
+            });
+
+            await updateProductInOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(404);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 500 due to internal server error", async () => {
+            const mockReq = { params: { orderId: "1", productId: "1" }, body: { quantity: 5 } };
+
+            mockPrismaOrderProducts.update.mockImplementationOnce(() => {
+                throw new Error("Internal server error");
+            });
+
+            await updateProductInOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(500);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+    });
+
+    describe("removeProductFromOrder", () => {
+        it("Should succeed to remove a product from an order with code 204", async () => {
+            const mockReq = { params: { orderId: "1", productId: "1" }, body: {} };
+
+            await removeProductFromOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(204);
+            expect(mockPrismaOrderProducts.delete).toHaveBeenCalledWith({
+                where: {
+                    movimentoId: "1",
+                    prodottoId: "1"
+                }
+            });
+        });
+
+        it("Should fail with code 400 due to missing orderId in the params", async () => {
+            const mockReq = { params: { productId: "1" }, body: {} };
+
+            await removeProductFromOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 400 due to missing productId in the params", async () => {
+            const mockReq = { params: { orderId: "1" }, body: {} };
+
+            await removeProductFromOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(400);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 404 due to non-existing product in the order", async () => {
+            const mockReq = { params: { orderId: "1", productId: "fake-id" }, body: {} };
+
+            await removeProductFromOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(404);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 404 due to non-existing order", async () => {
+            const mockReq = { params: { orderId: "fake-id", productId: "1" }, body: {} };
+
+            await removeProductFromOrder(
+                mockReq as any,
+                mockRes as any as Response
+            );
+
+            expect(mockRes.statusCode).toBe(404);
+            expect(mockRes.responseData).toHaveProperty("error");
+        });
+
+        it("Should fail with code 500 due to internal server error", async () => {
+            const mockReq = { params: { orderId: "1", productId: "1" }, body: {} };
+
+            mockPrismaOrderProducts.delete.mockImplementationOnce(() => {
+                throw new Error("Internal server error");
+            });
+
+            await removeProductFromOrder(
                 mockReq as any,
                 mockRes as any as Response
             );
