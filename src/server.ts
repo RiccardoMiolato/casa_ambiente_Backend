@@ -1,9 +1,12 @@
 // src/server.ts
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import dotenv from "dotenv";
 import type { Express, NextFunction, Request, Response } from "express";
 import express from "express";
 import { prisma } from "./lib/prisma";
+import { requireAuth } from "./middleware/auth";
+import authRoutes from "./routes/auth";
 import customerRoutes from "./routes/customer";
 import customerTypeRoutes from "./routes/customerType";
 import estimateRoutes from "./routes/estimates";
@@ -20,16 +23,21 @@ const PORT = process.env.PORT || 3000;
 // ============= MIDDLEWARE =============
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(cookieParser());
+app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  credentials: true,
+}));
 
 // ============= ROUTES =============
-app.use("/api/customers", customerRoutes);
-app.use("/api/customer/types", customerTypeRoutes);
-app.use("/api/estimates", estimateRoutes);
-app.use("/api/producers", producerRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/product-types", productTypeRoutes);
-app.use("/api/orders", orderRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/customers", requireAuth, customerRoutes);
+app.use("/api/customer/types", requireAuth, customerTypeRoutes);
+app.use("/api/estimates", requireAuth, estimateRoutes);
+app.use("/api/producers", requireAuth, producerRoutes);
+app.use("/api/products", requireAuth, productRoutes);
+app.use("/api/product-types", requireAuth, productTypeRoutes);
+app.use("/api/orders", requireAuth, orderRoutes);
 
 // Health check
 // Used to verify server status through HTTP requests
