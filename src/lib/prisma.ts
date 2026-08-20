@@ -9,7 +9,9 @@ const adapter = new PrismaPg({ connectionString });
 
 const prisma = new PrismaClient({
   adapter,
-  log: ["query", "error", "warn"], // Mostra le query nel terminale
+  log: process.env.NODE_ENV === "development"
+    ? ["query", "error", "warn"]
+    : ["error"], // Decides which events to log
 });
 
 export { prisma };

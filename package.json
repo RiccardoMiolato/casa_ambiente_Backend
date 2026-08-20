@@ -6,9 +6,9 @@
     "dev": "bunx tsx src/server.ts",
     "build": "bun build src/server.ts",
     "start": "node dist/server.js",
-    "test": "bun test",
-    "test:watch": "bun test --watch",
-    "test:coverage": "bun test --coverage"
+    "test": "bun test --env-file=.env.test",
+    "test:watch": "bun test --watch --env-file=.env.test",
+    "test:coverage": "bun test --coverage --env-file=.env.test"
   },
   "devDependencies": {
     "@types/bun": "latest",
