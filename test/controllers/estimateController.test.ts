@@ -414,7 +414,7 @@ describe("Estimate controller", () => {
     });
 
     describe("deleteEstimate", () => {
-        it("Should delete an estimate with code 204", async () => {
+        it("Should delete an estimate with code 200", async () => {
             const mockReq = { params: { id: "1" }, body: {} };
 
             await deleteEstimate(
@@ -422,7 +422,8 @@ describe("Estimate controller", () => {
                 mockRes as any as Response
             );
 
-            expect(mockRes.statusCode).toBe(204);
+            expect(mockRes.statusCode).toBe(200);
+            expect(mockRes.responseData).toHaveProperty("message");
         });
 
         it("Should fail with code 400 due to missing estimate id", async () => {
@@ -710,7 +711,7 @@ describe("Estimate Sections Controller", () => {
     });
 
     describe("deleteSectionFromEstimate", () => {
-        it("Should successfully delete a section from an estimate with code 204", async () => {
+        it("Should successfully delete a section from an estimate with code 200", async () => {
             const mockReq = { params: { estimateId: "1", sectionId: "1"}, body: {} };
 
             await deleteSectionFromEstimate(
@@ -718,7 +719,8 @@ describe("Estimate Sections Controller", () => {
                 mockRes as any as Response
             );
 
-            expect(mockRes.statusCode).toBe(204);
+            expect(mockRes.statusCode).toBe(200);
+            expect(mockRes.responseData).toHaveProperty("message");
         });
 
         it("Should fail with code 400 due to missing param: estimateId", async () => {
@@ -1136,7 +1138,7 @@ describe("Section-Products Controller", () => {
     });
 
     describe("removeProductFromSection", () => {
-        it("Should succeed with code 204 removing a product from a section", async () => {
+        it("Should succeed with code 200 removing a product from a section", async () => {
             const mockReq = { params: { sectionId: "1", productId: "1"}, body: {}};
 
             await removeProductFromSection(
@@ -1144,8 +1146,8 @@ describe("Section-Products Controller", () => {
                 mockRes as any as Response
             );
 
-
-            expect(mockRes.statusCode).toBe(204);
+            expect(mockRes.statusCode).toBe(200);
+            expect(mockRes.responseData).toHaveProperty("message");
         });
 
         it("Should fail with code 400 due to missing parameter: sectionId", async () => {

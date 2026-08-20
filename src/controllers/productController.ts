@@ -193,7 +193,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
         await prisma.prodotto.delete({
             where: { id: id },
         });
-        res.status(200).json({ message: "Product deleted successfully" });
+        res.status(200).json({ message: "Product deleted successfully"});
     } catch (error) {
         res.status(500).json({ error: "Failed to delete product" });
     }
@@ -293,7 +293,7 @@ export const deleteProductType = async (req: Request, res: Response) => {
         await prisma.tipologiaProdotto.delete({
             where: { id: id },
         });
-        res.status(204);
+        res.status(200).json({ message: "Product type deleted successfully" });
     } catch (error) {
         res.status(500).json({ error: "Failed to delete product type" });
     }

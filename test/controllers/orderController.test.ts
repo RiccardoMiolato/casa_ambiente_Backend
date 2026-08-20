@@ -385,7 +385,7 @@ describe("Order Controller", () => {
     });
 
     describe("deleteOrder", () => {
-        it("Should delete an existing order with code 204", async () => {
+        it("Should delete an existing order with code 200", async () => {
             const mockReq = { params: { id: "1" }, body: {} };
 
             await deleteOrder(
@@ -393,7 +393,8 @@ describe("Order Controller", () => {
                 mockRes as any as Response
             );
 
-            expect(mockRes.statusCode).toBe(204);
+            expect(mockRes.statusCode).toBe(200);
+            expect(mockRes.responseData).toHaveProperty("message");
             expect(mockPrismaOrder.delete).toHaveBeenCalledWith({
                 where: { id: "1" },
             });
@@ -686,7 +687,7 @@ describe("Order Products Controller", () => {
     });
 
     describe("removeProductFromOrder", () => {
-        it("Should succeed to remove a product from an order with code 204", async () => {
+        it("Should succeed to remove a product from an order with code 200", async () => {
             const mockReq = { params: { orderId: "1", productId: "1" }, body: {} };
 
             await removeProductFromOrder(
@@ -694,7 +695,8 @@ describe("Order Products Controller", () => {
                 mockRes as any as Response
             );
 
-            expect(mockRes.statusCode).toBe(204);
+            expect(mockRes.statusCode).toBe(200);
+            expect(mockRes.responseData).toHaveProperty("message");
             expect(mockPrismaOrderProducts.delete).toHaveBeenCalledWith({
                 where: {
                     movimentoId: "1",

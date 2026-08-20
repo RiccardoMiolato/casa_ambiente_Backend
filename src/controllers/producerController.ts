@@ -109,7 +109,7 @@ export const deleteProducer = async (req: Request, res: Response) => {
         await prisma.produttore.delete({
             where: { id: id },
         });
-        res.status(204);
+        res.status(200).json({ message: `Producer with id ${id} deleted successfully` });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete producer' });
     }

@@ -178,7 +178,7 @@ export const deleteEstimate = async (req: Request, res: Response) => {
             where: { id: id },
         });
 
-        res.status(204);
+        res.status(200).json({ message: "Estimate deleted successfully"});
     } catch (error) {
         res.status(500).json({ error: "Internal server error" });
     }
@@ -318,7 +318,7 @@ export const deleteSectionFromEstimate = async (req: Request, res: Response) => 
             where: { id: sectionId },
         });
 
-        res.status(204);
+        res.status(200).json({ message: "Section deleted successfully"});
     } catch (error) {
         res.status(500).json({ error: "Internal server error" });
     }
@@ -480,7 +480,7 @@ export const removeProductFromSection = async (req: Request, res: Response) => {
             where: { id: sectionProduct.id },
         });
 
-        res.status(204);
+        res.status(200).json({ message: "Product removed successfully from section"});
     } catch (error) {
         res.status(500).json({ error: "Internal server error" });
     }

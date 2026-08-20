@@ -231,7 +231,7 @@ describe("Producer Controller", () => {
     });
 
     describe("deleteProducer", () => {
-        it("Should delete successfully with code 204", async () => {
+        it("Should delete successfully with code 200", async () => {
             const mockReq = {params: {id: "1"}, body: {}};
 
             await deleteProducer(
@@ -239,7 +239,8 @@ describe("Producer Controller", () => {
                 mockRes as any as Response
             );
 
-            expect(mockRes.statusCode).toBe(204);
+            expect(mockRes.statusCode).toBe(200);
+            expect(mockRes.responseData).toHaveProperty("message");
         });
 
         it("Should fail with code 400 due to missing id parameter", async () => {
