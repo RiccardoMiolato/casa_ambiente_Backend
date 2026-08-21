@@ -1,4 +1,3 @@
-// src/server.ts
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import dotenv from "dotenv";

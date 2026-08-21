@@ -7,16 +7,10 @@ export const TEST_PASSWORD = "test-password-123";
 export async function createTestUser() {
   const passwordHash = await hashPassword(TEST_PASSWORD);
 
-  return prisma.user.upsert({
-        where: {
-            username: TEST_USERNAME,
-        },
-        update: {
-            passwordHash,
-        },
-        create: {
-            username: TEST_USERNAME,
-            passwordHash,
-        },
+  return prisma.user.create({
+    data: {
+      username: TEST_USERNAME,
+      passwordHash,
+    },
   });
 }
