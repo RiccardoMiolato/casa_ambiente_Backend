@@ -6,8 +6,6 @@ import { loginAsTestUser } from "../utils/helpers/auth";
 import { setupTestDatabase } from "../utils/helpers/setup";
 
 describe("Customer Type Integration", () => {
-    let customerTypeId: string | null = null;
-
     beforeAll(async () => {
         await setupTestDatabase();
     });
@@ -39,7 +37,6 @@ describe("Customer Type Integration", () => {
                 .send(requestBody);
 
             expect(response.status).toBe(201);
-            customerTypeId = response.body.id;
 
             const customerType = await prisma.tipologiaCliente.findUnique({
                 where: {id: response.body.id}
@@ -99,8 +96,14 @@ describe("Customer Type Integration", () => {
         it("Should successfully delete customer type", async () => {
             const agent = await loginAsTestUser();
 
-            const response = await agent.delete(`/api/customer/types/${customerTypeId}`);
+            await prisma.tipologiaCliente.deleteMany();
 
+            const createRes = await agent
+                .post("/api/customer/types")
+                .send({ tipoCliente: "ToDelete" });
+            const idToDelete = createRes.body.id;
+
+            const response = await agent.delete(`/api/customer/types/${idToDelete}`);
             expect(response.status).toBe(200);
 
             const customerTypesCount = await prisma.tipologiaCliente.count();
@@ -110,7 +113,7 @@ describe("Customer Type Integration", () => {
         it("Should fail to delete due to non-existing resource with passed id", async () => {
             const agent = await loginAsTestUser();
 
-            const response = await agent.delete(`/api/customer/types/${customerTypeId}`);
+            const response = await agent.delete(`/api/customer/types/non-existing-id`);
 
             expect(response.status).toBe(404);
             expect(response.body).toHaveProperty("error", "Customer type not found");

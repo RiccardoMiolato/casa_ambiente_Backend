@@ -20,5 +20,6 @@ export async function cleanDatabase() {
     await prisma.user.deleteMany();
 
     // Resources
+    await prisma.customer.deleteMany();
     await prisma.tipologiaCliente.deleteMany();
 }
