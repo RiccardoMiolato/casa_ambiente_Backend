@@ -7,6 +7,10 @@ beforeAll(async () => {
     await createTestUser();
 });
 
+afterAll(async () => {
+    await prisma.$disconnect();
+});
+
 test("test user exists", async () => {
     const user = await prisma.user.findUnique({
         where: {
@@ -17,11 +21,9 @@ test("test user exists", async () => {
     expect(user).not.toBeNull();
     expect(user?.username).toBe(TEST_USERNAME);
     expect(user?.passwordHash).toBeTruthy();
-    });
-
-    afterAll(async () => {
-    await prisma.$disconnect();
 });
+
+
 
 test("test user exists with valid password", async () => {
     const user = await prisma.user.findUnique({

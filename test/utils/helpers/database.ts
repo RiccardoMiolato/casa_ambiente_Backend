@@ -15,6 +15,10 @@ export async function cleanDatabase() {
         );
     }
 
+    // login-logout
     await prisma.session.deleteMany();
     await prisma.user.deleteMany();
+
+    // Resources
+    await prisma.tipologiaCliente.deleteMany();
 }
