@@ -256,7 +256,7 @@ export const removeProductFromOrder = async (req: Request, res: Response) => {
                 movimentoId: orderId
             }
         });
-        console.log(orderProduct);
+
         if (!orderProduct) {
             return res.status(404).json({
                 error: `Product ${productId} not found for order ${orderId}`

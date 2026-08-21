@@ -23,7 +23,6 @@ const orderProds = [prod1order1, prod1order2, prod2order1];
 const mockPrismaOrderProducts = {
     findMany: mock(() => orderProds),
     findUnique: mock(({where}) => {
-        console.log("Called");
         return orderProds.find(op => op.movimentoId === where.movimentoId && op.prodottoId === where.prodottoId);
     }),
     create: mock(({data}) => {
