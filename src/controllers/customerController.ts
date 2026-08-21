@@ -1,3 +1,4 @@
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 
@@ -51,6 +52,13 @@ export const createCustomer = async (req: Request, res: Response) => {
     }
 
     try {
+        const customerType = await prisma.tipologiaCliente.findUnique({
+            where: {id: tipoClienteId}
+        });
+        if (!customerType) {
+            return res.status(404).json({ error: "Customer type not found" });
+        }
+
         const newCustomer = await prisma.customer.create({
             data: {
                 name,
@@ -63,11 +71,14 @@ export const createCustomer = async (req: Request, res: Response) => {
                 cap,
                 via,
                 numeroCivico,
-                tipoClienteId
+                tipoClienteId: tipoClienteId
             },
         });
         res.status(201).json(newCustomer);
     }catch (error: any) {
+        if(error instanceof PrismaClientKnownRequestError && error.code === "P2002")
+            return res.status(409).json({ error: "Duplicate value detected creating new customer"});
+
         res.status(500).json({ error: "Internal server error" });
     }
 }
@@ -94,6 +105,21 @@ export const updateCustomer = async (req: Request, res: Response) => {
         })
     }
     try {
+        const customer = await prisma.customer.findUnique({
+            where: {id: id}
+        });
+        if (!customer) {
+            return res.status(404).json({ error: "Customer not found" });
+        }
+
+        const customerType = await prisma.tipologiaCliente.findUnique({
+            where: {id: tipoClienteId}
+        });
+        if (!customerType) {
+            return res.status(404).json({ error: "Customer type not found" });
+        }
+
+
         const updatedCustomer = await prisma.customer.update({
             where: { id: id },
             data: {
@@ -110,11 +136,12 @@ export const updateCustomer = async (req: Request, res: Response) => {
                 tipoClienteId
             },
         });
-        if (!updatedCustomer) {
-            return res.status(404).json({ error: "Customer not found" });
-        }
+
         res.json(updatedCustomer);
     } catch (error) {
+        if(error instanceof PrismaClientKnownRequestError && error.code === "P2002")
+            return res.status(409).json({ error: "Duplicate value detected updating customer"});
+
         res.status(500).json({ error: "Internal server error" });
     }
 }
@@ -129,12 +156,17 @@ export const deleteCustomer = async (req: Request, res: Response) => {
     }
 
     try {
-        const deletedCustomer = await prisma.customer.delete({
-            where: { id: id },
+        const customer = await prisma.customer.findUnique({
+            where: {id: id}
         });
-        if (!deletedCustomer) {
+        if (!customer) {
             return res.status(404).json({ error: "Customer not found" });
         }
+
+        await prisma.customer.delete({
+            where: { id: id },
+        });
+
         res.status(200).json({ message: "Customer deleted successfully" });
     } catch (error) {
         res.status(500).json({ error: "Internal server error" });
