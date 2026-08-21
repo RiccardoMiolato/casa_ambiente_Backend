@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
 import { verifyPassword } from "../lib/auth/password";
 import {
-    createSession,
-    deleteSession,
+  createSession,
+  deleteSession,
 } from "../lib/auth/session";
 import { prisma } from "../lib/prisma";
 
@@ -23,7 +23,7 @@ export async function login(req: Request, res: Response) {
     typeof password !== "string"
   ) {
     return res.status(400).json({
-      error: "Username e password sono obbligatori",
+      error: "Username and password are required",
     });
   }
 
@@ -35,7 +35,7 @@ export async function login(req: Request, res: Response) {
 
   if (!user) {
     return res.status(401).json({
-      error: "Credenziali non valide",
+      error: "Invalid credentials",
     });
   }
 
@@ -46,7 +46,7 @@ export async function login(req: Request, res: Response) {
 
   if (!validPassword) {
     return res.status(401).json({
-      error: "Credenziali non valide",
+      error: "Invalid credentials",
     });
   }
 
