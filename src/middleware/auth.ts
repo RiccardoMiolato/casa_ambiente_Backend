@@ -9,6 +9,8 @@ export async function requireAuth(
   try {
     const sessionId = req.cookies?.sessionId;
 
+    console.log(sessionId);
+
     if (!sessionId) {
       return res.status(401).json({
         error: "Unauthorized",
