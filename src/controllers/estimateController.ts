@@ -11,7 +11,17 @@ import { prisma } from '../lib/prisma';
 
 export const getAllEstimates = async (req: Request, res: Response) => {
     try {
-        const estimates = await prisma.preventivo.findMany();
+        const estimates = await prisma.preventivo.findMany({
+            include: {
+                customer: {
+                    select: {
+                        id: true,
+                        name: true,
+                        surname: true,
+                    }
+                }
+            }
+        });
         res.json(estimates);
     } catch (error) {
         res.status(500).json({ error: "Internal server error" });
@@ -30,11 +40,36 @@ export const getEstimateById = async (req: Request, res: Response) => {
     try {
         const estimate = await prisma.preventivo.findUnique({
             where: { id: id },
+            include: {
+            customer: true,
+            sezioni: {
+                include: {
+                prodotti: {
+                    include: {
+                    prodotto: {
+                        select: {
+                        prezzo: true
+                        }
+                    }
+                    }
+                }
+                }
+            }
+            },
         });
 
         if (!estimate) {
             return res.status(404).json({ error: "Estimate not found" });
         }
+
+        const totalPrice = estimate.sezioni.reduce((total, section) => {
+            const sectionTotal = section.prodotti.reduce((sectionSum, product) => {
+            return sectionSum + (product.prodotto.prezzo * product.quantità);
+            }, 0);
+            return total + sectionTotal;
+        }, 0);
+
+        res.json({ ...estimate, totalPrice });
 
         res.json(estimate);
     } catch (error) {
@@ -197,7 +232,7 @@ export const getSectionsByEstimateId = async (req: Request, res: Response) => {
 
     try {
         const sections = await prisma.sezionePreventivo.findMany({
-            where: { preventivoId: estimateId },
+            where: { preventivoId: estimateId }
         });
 
         if (!sections || sections.length === 0) {
@@ -346,11 +381,15 @@ export const getProductsBySectionId = async (req: Request, res: Response) => {
         const estimateSection = await prisma.sezionePreventivo.findUnique ({
             where: { id: sectionId },
             include: {
-                prodotti: {
-                    include: {
-                        prodotto: true
+            prodotti: {
+                include: {
+                    prodotto: {
+                        include: {
+                        tipoProdotto: true,
+                        }
                     }
                 }
+            }
             }
         });
 
